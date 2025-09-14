@@ -1,0 +1,31 @@
+import { type NextRequest, NextResponse } from "next/server"
+
+const API_BASE_URL = "https://tweet-trade-backend.vercel.app/api"
+
+export async function GET(request: NextRequest, { params }: { params: { tweetId: string } }) {
+  try {
+    const { tweetId } = params
+    const url = `${API_BASE_URL}/trading/trades/queued/${tweetId}`
+    console.log(`[API] Fetching queued trades for tweet: ${tweetId}`)
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      console.error(`[API] Queued trades by tweet fetch failed: ${response.status}`)
+      return NextResponse.json({ success: false, error: `HTTP ${response.status}` }, { status: response.status })
+    }
+
+    const data = await response.json()
+    console.log(`[API] Queued trades by tweet response:`, data)
+
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error("[API] Error fetching queued trades by tweet:", error)
+    return NextResponse.json({ success: false, error: "Failed to fetch queued trades" }, { status: 500 })
+  }
+}

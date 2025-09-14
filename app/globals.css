@@ -1,0 +1,129 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Updated to monochrome design with #26a7de as primary surface color */
+  --background: oklch(0.98 0.005 220); /* Very light gray background */
+  --foreground: oklch(0.15 0.01 220); /* Dark text for contrast */
+  --card: oklch(1 0 0); /* White cards */
+  --card-foreground: oklch(0.15 0.01 220); /* Dark card text */
+  --popover: oklch(1 0 0); /* White popover */
+  --popover-foreground: oklch(0.15 0.01 220); /* Dark popover text */
+  --primary: #26a7de; /* Main theme color */
+  --primary-foreground: oklch(1 0 0); /* White text on primary */
+  --secondary: #26a7de80; /* 50% opacity of theme color */
+  --secondary-foreground: oklch(1 0 0); /* White text on secondary */
+  --muted: oklch(0.92 0.005 220); /* Light gray muted */
+  --muted-foreground: oklch(0.4 0.02 220); /* Medium gray text */
+  --accent: #26a7de; /* Same as primary */
+  --accent-foreground: oklch(1 0 0); /* White text on accent */
+  --destructive: oklch(0.5 0.15 25); /* Red for alerts */
+  --destructive-foreground: oklch(1 0 0); /* White text on destructive */
+  --border: oklch(0.88 0.005 220); /* Light gray borders */
+  --input: oklch(1 0 0); /* White input fields */
+  --ring: #26a7de; /* Primary color focus ring */
+  --chart-1: #26a7de; /* Primary blue for buy orders */
+  --chart-2: #26a7de66; /* 40% opacity for secondary charts */
+  --chart-3: #26a7de99; /* 60% opacity for queued */
+  --chart-4: #26a7de1a; /* 10% opacity for backgrounds */
+  --chart-5: #26a7de4d; /* 30% opacity for medium elements */
+  --radius: 0.5rem;
+  --sidebar: oklch(1 0 0); /* White sidebar */
+  --sidebar-foreground: oklch(0.15 0.01 220); /* Dark sidebar text */
+  --sidebar-primary: #26a7de; /* Primary blue sidebar sections */
+  --sidebar-primary-foreground: oklch(1 0 0); /* White sidebar primary text */
+  --sidebar-accent: oklch(0.92 0.005 220); /* Light gray sidebar highlights */
+  --sidebar-accent-foreground: oklch(0.15 0.01 220); /* Dark sidebar accent text */
+  --sidebar-border: oklch(0.88 0.005 220); /* Light gray sidebar borders */
+  --sidebar-ring: #26a7de; /* Primary blue sidebar focus */
+}
+
+.dark {
+  /* Updated dark mode to maintain monochrome theme with #26a7de */
+  --background: oklch(0.12 0.01 220); /* Very dark background */
+  --foreground: oklch(0.95 0.005 220); /* Light text */
+  --card: oklch(0.15 0.01 220); /* Dark cards */
+  --card-foreground: oklch(0.95 0.005 220); /* Light card text */
+  --popover: oklch(0.15 0.01 220); /* Dark popover */
+  --popover-foreground: oklch(0.95 0.005 220); /* Light popover text */
+  --primary: #26a7de; /* Brighter primary for dark mode */
+  --primary-foreground: oklch(0.05 0.01 220); /* Very dark text on primary */
+  --secondary: #26a7de80; /* 50% opacity of theme color */
+  --secondary-foreground: oklch(1 0 0); /* White text on secondary */
+  --muted: oklch(0.25 0.01 220); /* Dark muted */
+  --muted-foreground: oklch(0.7 0.02 220); /* Light muted text */
+  --accent: #26a7de; /* Same as primary */
+  --accent-foreground: oklch(0.05 0.01 220); /* Very dark text on accent */
+  --destructive: oklch(0.55 0.15 25); /* Brighter red for dark mode */
+  --destructive-foreground: oklch(1 0 0); /* White text on destructive */
+  --border: oklch(0.25 0.01 220); /* Dark borders */
+  --input: oklch(0.25 0.01 220); /* Dark inputs */
+  --ring: #26a7de; /* Primary color focus ring */
+  --chart-1: #26a7de; /* Brighter blue for buy orders */
+  --chart-2: #26a7de66; /* 40% opacity */
+  --chart-3: #26a7de99; /* 60% opacity for queued */
+  --chart-4: #26a7de1a; /* 10% opacity for backgrounds */
+  --chart-5: #26a7de4d; /* 30% opacity for medium elements */
+  --sidebar: oklch(0.1 0.01 220); /* Very dark sidebar */
+  --sidebar-foreground: oklch(0.95 0.005 220); /* Light sidebar text */
+  --sidebar-primary: #26a7de; /* Primary blue sidebar primary */
+  --sidebar-primary-foreground: oklch(0.05 0.01 220); /* Dark sidebar primary text */
+  --sidebar-accent: oklch(0.25 0.01 220); /* Dark sidebar accent */
+  --sidebar-accent-foreground: oklch(0.95 0.005 220); /* Light sidebar accent text */
+  --sidebar-border: oklch(0.25 0.01 220); /* Dark sidebar borders */
+  --sidebar-ring: #26a7de; /* Primary blue sidebar focus */
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Removed CSS marquee animation since we're using JavaScript-based procedural scroll */
