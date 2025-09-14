@@ -42,13 +42,14 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const mountedRef = useRef(true)
   const cacheRef = useRef<{ data: RealTimeData; timestamp: number } | null>(null)
-  const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+  const CACHE_DURATION = process.env.NODE_ENV === "production" ? 0 : 5 * 60 * 1000 // No cache in production, 5 minutes in dev
   const offsetRef = useRef(0)
 
   const fetchData = useCallback(
     async (forceRefresh = false, loadMore = false) => {
       try {
-        if (!forceRefresh && !loadMore && cacheRef.current) {
+        const shouldUseCache = process.env.NODE_ENV !== "production" && !forceRefresh && !loadMore && cacheRef.current
+        if (shouldUseCache) {
           const cacheAge = Date.now() - cacheRef.current.timestamp
           if (cacheAge < CACHE_DURATION) {
             setData(cacheRef.current.data)
@@ -144,6 +145,14 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
 
   useEffect(() => {
     fetchData(false, false)
+
+    if (process.env.NODE_ENV === "production") {
+      const interval = setInterval(() => {
+        fetchData(true, false)
+      }, 30000) // Refresh every 30 seconds in production
+
+      return () => clearInterval(interval)
+    }
   }, []) // Empty dependency array - only run on mount
 
   useEffect(() => {
