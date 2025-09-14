@@ -18,8 +18,12 @@ const fetchWithAuth = async (endpoint: string): Promise<Response> => {
     },
   })
 
+  console.log("[v0] Response status:", response.status)
+  console.log("[v0] Response ok:", response.ok)
+
   if (!response.ok) {
     const errorText = await response.text()
+    console.log("[v0] Error response:", errorText)
 
     if (response.status === 401) {
       throw new Error("Authentication failed. Please check your ADMIN_API_KEY in Project Settings.")
