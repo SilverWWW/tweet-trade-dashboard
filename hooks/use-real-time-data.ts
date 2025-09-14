@@ -41,22 +41,11 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
 
   const [isRefreshing, setIsRefreshing] = useState(false)
   const mountedRef = useRef(true)
-  const cacheRef = useRef<{ data: RealTimeData; timestamp: number } | null>(null)
-  const CACHE_DURATION = process.env.NODE_ENV === "production" ? 0 : 5 * 60 * 1000 // No cache in production, 5 minutes in dev
   const offsetRef = useRef(0)
 
   const fetchData = useCallback(
-    async (forceRefresh = false, loadMore = false) => {
+    async (loadMore = false) => {
       try {
-        const shouldUseCache = process.env.NODE_ENV !== "production" && !forceRefresh && !loadMore && cacheRef.current
-        if (shouldUseCache) {
-          const cacheAge = Date.now() - cacheRef.current.timestamp
-          if (cacheAge < CACHE_DURATION) {
-            setData(cacheRef.current.data)
-            return
-          }
-        }
-
         if (loadMore) {
           setData((prev) => ({ ...prev, loadingMore: true }))
         } else {
@@ -111,7 +100,6 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
         }
 
         setData(newData)
-        cacheRef.current = { data: newData, timestamp: Date.now() }
       } catch (err) {
         if (!mountedRef.current) return
 
@@ -134,25 +122,17 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
   )
 
   const manualRefresh = useCallback(() => {
-    fetchData(true, false)
+    fetchData(false)
   }, [fetchData])
 
   const loadMore = useCallback(() => {
     if (!data.loadingMore && data.hasMore) {
-      fetchData(false, true)
+      fetchData(true)
     }
   }, [fetchData, data.loadingMore, data.hasMore])
 
   useEffect(() => {
-    fetchData(false, false)
-
-    if (process.env.NODE_ENV === "production") {
-      const interval = setInterval(() => {
-        fetchData(true, false)
-      }, 30000) // Refresh every 30 seconds in production
-
-      return () => clearInterval(interval)
-    }
+    fetchData(false)
   }, []) // Empty dependency array - only run on mount
 
   useEffect(() => {
