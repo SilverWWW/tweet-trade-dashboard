@@ -59,7 +59,7 @@ export function PostCard({
       if (!containerRef.current) return
 
       const speed = 30 // slower speed for bouncing effect
-      const cardWidth = 832
+      const cardWidth = 584
       const containerWidth = containerRef.current.parentElement?.clientWidth || 400
       const totalWidth = totalTrades * cardWidth
       const maxOffset = Math.max(0, totalWidth - containerWidth)
@@ -94,7 +94,7 @@ export function PostCard({
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
-      const cardWidth = 832
+      const cardWidth = 584
       const currentVisibleIndex = Math.round(currentOffsetRef.current / cardWidth)
       setCurrentTradeIndex(Math.max(0, Math.min(currentVisibleIndex, totalTrades - 1)))
     }
@@ -103,7 +103,7 @@ export function PostCard({
     setCurrentTradeIndex(newIndex)
 
     if (containerRef.current) {
-      const cardWidth = 832
+      const cardWidth = 584
       const containerWidth = containerRef.current.parentElement?.clientWidth || 400
       const offset = Math.max(0, newIndex * cardWidth - (containerWidth - cardWidth) / 2)
       containerRef.current.style.transform = `translateX(-${offset}px)`
@@ -117,7 +117,7 @@ export function PostCard({
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
-      const cardWidth = 832
+      const cardWidth = 584
       const currentVisibleIndex = Math.round(currentOffsetRef.current / cardWidth)
       setCurrentTradeIndex(Math.max(0, Math.min(currentVisibleIndex, totalTrades - 1)))
     }
@@ -126,7 +126,7 @@ export function PostCard({
     setCurrentTradeIndex(newIndex)
 
     if (containerRef.current) {
-      const cardWidth = 832
+      const cardWidth = 584
       const containerWidth = containerRef.current.parentElement?.clientWidth || 400
       const totalWidth = totalTrades * cardWidth
 
@@ -163,7 +163,7 @@ export function PostCard({
     const absAmount = Math.abs(trade.dollar_amount)
 
     return (
-      <div className="flex-shrink-0 w-[800px] bg-white rounded-lg p-4 border border-gray-200 shadow-sm mx-2">
+      <div className="flex-shrink-0 w-[560px] bg-white rounded-lg p-4 border border-gray-200 shadow-sm mx-2">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
