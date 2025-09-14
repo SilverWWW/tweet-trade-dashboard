@@ -59,25 +59,19 @@ export function PostList({
 
       try {
         const initialPostsWithData = posts.map((post): PostWithData => {
-          // Extract author ID from tweet_process_id (first UUID part)
-          const authorId =
-            post.tweet_process_id.split("-")[0] +
-            "-" +
-            post.tweet_process_id.split("-")[1] +
-            "-" +
-            post.tweet_process_id.split("-")[2] +
-            "-" +
-            post.tweet_process_id.split("-")[3] +
-            "-" +
-            post.tweet_process_id.split("-")[4]
+          let authorId = post.author_id || "unknown"
+
+          if (post.tweet_process_id && typeof post.tweet_process_id === "string") {
+            // Extract author ID from tweet_process_id (first UUID part)
+            const parts = post.tweet_process_id.split("-")
+            if (parts.length >= 5) {
+              authorId = parts[0] + "-" + parts[1] + "-" + parts[2] + "-" + parts[3] + "-" + parts[4]
+            }
+          }
 
           // Filter trades for this specific post
           const postQueuedTrades = queuedTrades.filter((t) => t.tweet_process_id === post.tweet_process_id)
           const postExecutedTrades = executedTrades.filter((t) => t.tweet_process_id === post.tweet_process_id)
-
-          console.log(
-            `[v0] Post ${post.tweet_process_id}: ${postQueuedTrades.length} queued, ${postExecutedTrades.length} executed trades`,
-          )
 
           return {
             ...post,
@@ -92,18 +86,15 @@ export function PostList({
 
         const authorPromises = initialPostsWithData.map(async (post) => {
           try {
-            console.log(`[v0] Fetching author for ID: ${post.author_id}`)
             const authorResponse = await fetchAuthorById(post.author_id!)
 
             if (authorResponse.success && authorResponse.data) {
-              console.log(`[v0] Author loaded: ${authorResponse.data.name}`)
               return {
                 ...post,
                 author: authorResponse.data,
                 authorLoading: false,
               }
             } else {
-              console.log(`[v0] Author not found for ID: ${post.author_id}, using fallback`)
               // Create a fallback author if API doesn't return data
               return {
                 ...post,
@@ -119,7 +110,6 @@ export function PostList({
               }
             }
           } catch (error) {
-            console.error(`[v0] Error fetching author ${post.author_id}:`, error)
             // Return post with loading author on error
             return {
               ...post,

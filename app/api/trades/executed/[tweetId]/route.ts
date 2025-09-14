@@ -6,12 +6,12 @@ export async function GET(request: NextRequest, { params }: { params: { tweetId:
   try {
     const { tweetId } = params
     const url = `${API_BASE_URL}/trading/trades/executed/${tweetId}`
-    console.log(`[API] Fetching executed trades for tweet: ${tweetId}`)
 
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.ADMIN_API_KEY}`,
       },
     })
 
@@ -21,7 +21,6 @@ export async function GET(request: NextRequest, { params }: { params: { tweetId:
     }
 
     const data = await response.json()
-    console.log(`[API] Executed trades by tweet response:`, data)
 
     return NextResponse.json(data)
   } catch (error) {

@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: "Tweet Trade - Social Media Trading Dashboard",
   description: "Real-time trading dashboard powered by social media insights",
   generator: "v0.app",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
 }
 
 export default function RootLayout({

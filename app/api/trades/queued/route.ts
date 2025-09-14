@@ -36,69 +36,28 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
   throw new Error("Max retries exceeded")
 }
 
-const mockQueuedTrades = {
-  success: true,
-  data: [
-    {
-      id: "queued-1",
-      tweet_id: "mock-1",
-      ticker: "TSLA",
-      dollar_amount: 5000,
-      days_to_hold: 7,
-      reasoning:
-        "Strong positive sentiment around renewable energy breakthrough announcement. Technical indicators show bullish momentum with high social media engagement.",
-      queued_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-    },
-    {
-      id: "queued-2",
-      tweet_id: "mock-2",
-      ticker: "SPY",
-      dollar_amount: 3000,
-      days_to_hold: 3,
-      reasoning:
-        "Federal Reserve policy changes typically create short-term volatility opportunities. Market positioning suggests upward movement likely.",
-      queued_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    },
-    {
-      id: "queued-3",
-      tweet_id: "mock-3",
-      ticker: "NVDA",
-      dollar_amount: 7500,
-      days_to_hold: 14,
-      reasoning:
-        "AI chip performance improvements drive significant market value. Historical patterns show sustained growth following major tech announcements.",
-      queued_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-    },
-  ],
-}
-
 export async function GET() {
   try {
     const url = `${API_BASE_URL}/trading/trades/queued`
-    console.log(`[API] Fetching queued trades from: ${url}`)
 
     const response = await fetchWithRetry(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.ADMIN_API_KEY}`,
       },
     })
 
     if (!response.ok) {
       console.error(`[API] Queued trades fetch failed: ${response.status}`)
-
-      console.log("[API] Falling back to mock queued trades data")
-      return NextResponse.json(mockQueuedTrades)
+      return NextResponse.json({ success: false, error: "Failed to fetch queued trades" }, { status: response.status })
     }
 
     const data = await response.json()
-    console.log(`[API] Queued trades response:`, data)
 
     return NextResponse.json(data)
   } catch (error) {
     console.error("[API] Error fetching queued trades:", error)
-
-    console.log("[API] Falling back to mock queued trades data due to error")
-    return NextResponse.json(mockQueuedTrades)
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }

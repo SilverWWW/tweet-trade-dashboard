@@ -36,72 +36,31 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
   throw new Error("Max retries exceeded")
 }
 
-const mockExecutedTrades = {
-  success: true,
-  data: [
-    {
-      id: "executed-1",
-      tweet_id: "mock-1",
-      ticker: "ENPH",
-      dollar_amount: 4200,
-      days_to_hold: 5,
-      reasoning:
-        "Clean energy sector momentum following renewable technology breakthrough. Strong institutional buying patterns observed.",
-      executed_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      execution_price: 142.5,
-    },
-    {
-      id: "executed-2",
-      tweet_id: "mock-2",
-      ticker: "QQQ",
-      dollar_amount: 6800,
-      days_to_hold: 2,
-      reasoning:
-        "Tech-heavy ETF positioned well for Fed policy changes. Options flow indicates bullish sentiment among institutional traders.",
-      executed_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      execution_price: 398.75,
-    },
-    {
-      id: "executed-3",
-      tweet_id: "mock-3",
-      ticker: "AMD",
-      dollar_amount: 3500,
-      days_to_hold: 10,
-      reasoning:
-        "Semiconductor competition heating up with new AI chip announcements. AMD positioned as value play in growing market.",
-      executed_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      execution_price: 156.2,
-    },
-  ],
-}
-
 export async function GET() {
   try {
     const url = `${API_BASE_URL}/trading/trades/executed`
-    console.log(`[API] Fetching executed trades from: ${url}`)
 
     const response = await fetchWithRetry(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.ADMIN_API_KEY}`,
       },
     })
 
     if (!response.ok) {
       console.error(`[API] Executed trades fetch failed: ${response.status}`)
-
-      console.log("[API] Falling back to mock executed trades data")
-      return NextResponse.json(mockExecutedTrades)
+      return NextResponse.json(
+        { success: false, error: "Failed to fetch executed trades" },
+        { status: response.status },
+      )
     }
 
     const data = await response.json()
-    console.log(`[API] Executed trades response:`, data)
 
     return NextResponse.json(data)
   } catch (error) {
     console.error("[API] Error fetching executed trades:", error)
-
-    console.log("[API] Falling back to mock executed trades data due to error")
-    return NextResponse.json(mockExecutedTrades)
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }

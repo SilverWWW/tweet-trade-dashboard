@@ -58,8 +58,6 @@ export interface ApiResponse<T> {
 }
 
 const fetchWithErrorHandling = async (url: string): Promise<Response> => {
-  console.log(`[v0] Fetching: ${url}`)
-
   const response = await fetch(url, {
     method: "GET",
     headers: {
@@ -69,11 +67,17 @@ const fetchWithErrorHandling = async (url: string): Promise<Response> => {
     mode: "cors",
   })
 
-  console.log(`[v0] Response status: ${response.status}`)
-
   if (!response.ok) {
     const errorText = await response.text()
-    console.log(`[v0] Error response: ${errorText}`)
+
+    if (response.status === 401) {
+      throw new Error("Authentication failed. Please check your ADMIN_API_KEY in Project Settings.")
+    } else if (response.status === 403) {
+      throw new Error("Access denied. Please verify your ADMIN_API_KEY has the correct permissions.")
+    } else if (response.status === 500) {
+      throw new Error("Server error. The backend service may be experiencing issues.")
+    }
+
     throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
   }
 
@@ -87,7 +91,6 @@ export async function fetchTweetsWithMarketEffect(limit = 20, offset = 0): Promi
       `${API_BASE_URL}/tweets?market_effect=true&limit=${limit}&offset=${offset}&status=completed`,
     )
     const result = await response.json()
-    console.log(`[v0] Tweets response:`, result)
     return result
   } catch (error) {
     console.error("Error fetching tweets with market effect:", error)
@@ -100,7 +103,6 @@ export async function fetchQueuedTradesByTweetId(tweetProcessId: string): Promis
   try {
     const response = await fetchWithErrorHandling(`${API_BASE_URL}/trades/queued/${tweetProcessId}`)
     const result = await response.json()
-    console.log(`[v0] Queued trades response:`, result)
     return result
   } catch (error) {
     console.error("Error fetching queued trades:", error)
@@ -113,7 +115,6 @@ export async function fetchExecutedTradesByTweetId(tweetProcessId: string): Prom
   try {
     const response = await fetchWithErrorHandling(`${API_BASE_URL}/trades/executed/${tweetProcessId}`)
     const result = await response.json()
-    console.log(`[v0] Executed trades response:`, result)
     return result
   } catch (error) {
     console.error("Error fetching executed trades:", error)
@@ -126,7 +127,6 @@ export async function fetchAuthorById(authorId: string): Promise<ApiResponse<Aut
   try {
     const response = await fetchWithErrorHandling(`${API_BASE_URL}/authors/${authorId}`)
     const result = await response.json()
-    console.log(`[v0] Author response:`, result)
     return result
   } catch (error) {
     console.error("Error fetching author:", error)
@@ -139,7 +139,6 @@ export async function fetchAllQueuedTrades(): Promise<ApiResponse<QueuedTrade[]>
   try {
     const response = await fetchWithErrorHandling(`${API_BASE_URL}/trades/queued`)
     const result = await response.json()
-    console.log(`[v0] All queued trades response:`, result)
     return result
   } catch (error) {
     console.error("Error fetching all queued trades:", error)
@@ -152,7 +151,6 @@ export async function fetchAllExecutedTrades(): Promise<ApiResponse<ExecutedTrad
   try {
     const response = await fetchWithErrorHandling(`${API_BASE_URL}/trades/executed`)
     const result = await response.json()
-    console.log(`[v0] All executed trades response:`, result)
     return result
   } catch (error) {
     console.error("Error fetching all executed trades:", error)

@@ -36,36 +36,6 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
   throw new Error("Max retries exceeded")
 }
 
-const mockTweets = {
-  success: true,
-  data: [
-    {
-      id: "mock-1",
-      tweet_content:
-        "Just announced a major breakthrough in renewable energy technology. This could revolutionize the entire sector! $TSLA $ENPH #CleanEnergy",
-      submitted_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      status: "completed",
-      market_effect: true,
-    },
-    {
-      id: "mock-2",
-      tweet_content:
-        "Federal Reserve hints at potential interest rate changes in upcoming meeting. Markets are already responding. $SPY $QQQ",
-      submitted_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-      status: "completed",
-      market_effect: true,
-    },
-    {
-      id: "mock-3",
-      tweet_content:
-        "New AI chip announcement from major tech company shows 40% performance improvement over previous generation. $NVDA $AMD",
-      submitted_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-      status: "processing",
-      market_effect: false,
-    },
-  ],
-}
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -86,30 +56,24 @@ export async function GET(request: NextRequest) {
       url += `?${params.toString()}`
     }
 
-    console.log(`[API] Fetching tweets from: ${url}`)
-
     const response = await fetchWithRetry(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.ADMIN_API_KEY}`,
       },
     })
 
     if (!response.ok) {
       console.error(`[API] Tweet fetch failed: ${response.status}`)
-
-      console.log("[API] Falling back to mock data")
-      return NextResponse.json(mockTweets)
+      return NextResponse.json({ success: false, error: "Failed to fetch tweets" }, { status: response.status })
     }
 
     const data = await response.json()
-    console.log(`[API] Tweet response:`, data)
 
     return NextResponse.json(data)
   } catch (error) {
     console.error("[API] Error fetching tweets:", error)
-
-    console.log("[API] Falling back to mock data due to error")
-    return NextResponse.json(mockTweets)
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }
