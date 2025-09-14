@@ -40,51 +40,54 @@ export function PostCard({
   const [showAuthorTooltip, setShowAuthorTooltip] = useState(false)
   const [isManualControl, setIsManualControl] = useState(false)
   const [currentTradeIndex, setCurrentTradeIndex] = useState(0)
-  const animationRef = useRef<number>()
+  const [currentOffset, setCurrentOffset] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
-  const currentOffsetRef = useRef(0)
-  const directionRef = useRef(1) // 1 for right, -1 for left
-  const initialOffsetRef = useRef(Math.random() * 200) // smaller random offset for bouncing
 
   const allTrades = [...queuedTrades, ...executedTrades]
   const totalTrades = allTrades.length
   const hasMarketEffect = post.market_effect
 
+  const getDimensions = () => {
+    if (!containerRef.current) return { cardWidth: 0, containerWidth: 0, totalWidth: 0 }
+
+    const container = containerRef.current.parentElement
+    const firstCard = containerRef.current.querySelector("[data-trade-card]") as HTMLElement
+
+    if (!container || !firstCard) return { cardWidth: 0, containerWidth: 0, totalWidth: 0 }
+
+    const containerWidth = container.clientWidth
+    const cardWidth = firstCard.offsetWidth + 16 // Include margin
+    const totalWidth = totalTrades * cardWidth
+
+    return { cardWidth, containerWidth, totalWidth }
+  }
+
   useEffect(() => {
     if (totalTrades === 0 || isManualControl) return
 
-    currentOffsetRef.current = initialOffsetRef.current
+    const { cardWidth, containerWidth, totalWidth } = getDimensions()
+    if (cardWidth === 0) return
 
-    const animate = () => {
-      if (!containerRef.current) return
+    const leftPadding = 16 // pl-4 = 16px
+    const maxOffset = Math.max(0, totalWidth - containerWidth + leftPadding + 32)
 
-      const speed = 30 // slower speed for bouncing effect
-      const isMobile = window.innerWidth < 768
-      const cardWidth = isMobile ? window.innerWidth - 32 : 584 // 32px for padding
-      const containerWidth = containerRef.current.parentElement?.clientWidth || 400
-      const totalWidth = totalTrades * cardWidth
-      const maxOffset = Math.max(0, totalWidth - containerWidth)
+    if (containerRef.current && maxOffset > 0) {
+      const baseSpeed = 33 // pixels per second
+      const duration = Math.max(4, maxOffset / baseSpeed) // minimum 4 seconds
 
-      currentOffsetRef.current += (speed * directionRef.current) / 60
-
-      if (currentOffsetRef.current <= 0) {
-        currentOffsetRef.current = 0
-        directionRef.current = 1 // bounce right
-      } else if (currentOffsetRef.current >= maxOffset) {
-        currentOffsetRef.current = maxOffset
-        directionRef.current = -1 // bounce left
+      // Set CSS custom properties for the animation
+      containerRef.current.style.setProperty("--max-offset", `${maxOffset}px`)
+      containerRef.current.style.setProperty("--animation-duration", `${duration}s`)
+      containerRef.current.classList.add("floating-animation")
+    } else {
+      if (containerRef.current) {
+        containerRef.current.classList.remove("floating-animation")
       }
-
-      containerRef.current.style.transform = `translateX(-${currentOffsetRef.current}px)`
-
-      animationRef.current = requestAnimationFrame(animate)
     }
 
-    animationRef.current = requestAnimationFrame(animate)
-
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
+      if (containerRef.current) {
+        containerRef.current.classList.remove("floating-animation")
       }
     }
   }, [totalTrades, isManualControl])
@@ -92,60 +95,66 @@ export function PostCard({
   const handlePrevTrade = () => {
     if (!isManualControl) {
       setIsManualControl(true)
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
+      if (containerRef.current) {
+        containerRef.current.classList.remove("floating-animation")
       }
-      const isMobile = window.innerWidth < 768
-      const cardWidth = isMobile ? window.innerWidth - 32 : 584
-      const currentVisibleIndex = Math.round(currentOffsetRef.current / cardWidth)
-      setCurrentTradeIndex(Math.max(0, Math.min(currentVisibleIndex, totalTrades - 1)))
     }
 
     const newIndex = Math.max(0, currentTradeIndex - 1)
     setCurrentTradeIndex(newIndex)
 
     if (containerRef.current) {
-      const isMobile = window.innerWidth < 768
-      const cardWidth = isMobile ? window.innerWidth - 32 : 584
-      const containerWidth = containerRef.current.parentElement?.clientWidth || 400
-      const offset = Math.max(0, newIndex * cardWidth - (containerWidth - cardWidth) / 2)
-      containerRef.current.style.transform = `translateX(-${offset}px)`
-      containerRef.current.style.transition = "transform 0.3s ease-in-out"
+      const { cardWidth, containerWidth } = getDimensions()
+
+      if (cardWidth === 0) return
+
+      const cardPosition = newIndex * cardWidth
+      const centeredOffset = cardPosition - (containerWidth - cardWidth) / 2
+      const clampedOffset = Math.max(0, centeredOffset)
+
+      setCurrentOffset(clampedOffset)
+      containerRef.current.style.transform = `translateX(-${clampedOffset}px)`
+      containerRef.current.style.transition = "transform 0.3s ease-out"
+
+      setTimeout(() => {
+        if (containerRef.current) {
+          containerRef.current.style.transition = "none"
+        }
+      }, 300)
     }
   }
 
   const handleNextTrade = () => {
     if (!isManualControl) {
       setIsManualControl(true)
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
+      if (containerRef.current) {
+        containerRef.current.classList.remove("floating-animation")
       }
-      const isMobile = window.innerWidth < 768
-      const cardWidth = isMobile ? window.innerWidth - 32 : 584
-      const currentVisibleIndex = Math.round(currentOffsetRef.current / cardWidth)
-      setCurrentTradeIndex(Math.max(0, Math.min(currentVisibleIndex, totalTrades - 1)))
     }
 
     const newIndex = Math.min(totalTrades - 1, currentTradeIndex + 1)
     setCurrentTradeIndex(newIndex)
 
     if (containerRef.current) {
-      const isMobile = window.innerWidth < 768
-      const cardWidth = isMobile ? window.innerWidth - 32 : 584
-      const containerWidth = containerRef.current.parentElement?.clientWidth || 400
-      const totalWidth = totalTrades * cardWidth
+      const { cardWidth, containerWidth, totalWidth } = getDimensions()
 
-      let offset
-      if (newIndex === totalTrades - 1) {
-        // Position so the rightmost card aligns with the right edge
-        offset = Math.max(0, totalWidth - containerWidth)
-      } else {
-        // Center the selected card for all other positions
-        offset = Math.max(0, newIndex * cardWidth - (containerWidth - cardWidth) / 2)
-      }
+      if (cardWidth === 0) return
 
-      containerRef.current.style.transform = `translateX(-${offset}px)`
-      containerRef.current.style.transition = "transform 0.3s ease-in-out"
+      const cardPosition = newIndex * cardWidth
+      const centeredOffset = cardPosition - (containerWidth - cardWidth) / 2
+      const leftPadding = 16
+      const maxOffset = Math.max(0, totalWidth - containerWidth + leftPadding + 32)
+      const clampedOffset = Math.max(0, Math.min(centeredOffset, maxOffset))
+
+      setCurrentOffset(clampedOffset)
+      containerRef.current.style.transform = `translateX(-${clampedOffset}px)`
+      containerRef.current.style.transition = "transform 0.3s ease-out"
+
+      setTimeout(() => {
+        if (containerRef.current) {
+          containerRef.current.style.transition = "none"
+        }
+      }, 300)
     }
   }
 
@@ -168,7 +177,10 @@ export function PostCard({
     const absAmount = Math.abs(trade.dollar_amount)
 
     return (
-      <div className="flex-shrink-0 w-full md:w-[560px] bg-white rounded-lg p-4 border border-gray-200 shadow-sm mx-2">
+      <div
+        data-trade-card
+        className="flex-shrink-0 w-full md:w-[728px] bg-white rounded-lg p-4 border border-gray-200 shadow-sm mx-2"
+      >
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -354,7 +366,7 @@ export function PostCard({
               </div>
 
               <div className="relative overflow-hidden -mx-4">
-                <div ref={containerRef} className="flex transition-none pl-4">
+                <div ref={containerRef} className="flex transition-none pl-4 floating-animation">
                   {allTrades.map((trade, index) => (
                     <TradeCard key={`${index}-${trade.ticker}`} trade={trade} index={index} />
                   ))}

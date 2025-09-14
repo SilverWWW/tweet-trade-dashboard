@@ -38,6 +38,8 @@
   --sidebar-accent-foreground: oklch(0.15 0.01 220); /* Dark sidebar accent text */
   --sidebar-border: oklch(0.88 0.005 220); /* Light gray sidebar borders */
   --sidebar-ring: #26a7de; /* Primary blue sidebar focus */
+  --max-offset: 10px; /* Maximum offset for floating animation */
+  --animation-duration: 8s; /* Default duration for floating animation */
 }
 
 .dark {
@@ -74,6 +76,8 @@
   --sidebar-accent-foreground: oklch(0.95 0.005 220); /* Light sidebar accent text */
   --sidebar-border: oklch(0.25 0.01 220); /* Dark sidebar borders */
   --sidebar-ring: #26a7de; /* Primary blue sidebar focus */
+  --max-offset: 10px; /* Maximum offset for floating animation */
+  --animation-duration: 8s; /* Default duration for floating animation */
 }
 
 @theme inline {
@@ -124,6 +128,23 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Adding smooth CSS-based floating animation for trade cards */
+@keyframes float-cards {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(calc(-1 * var(--max-offset)));
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.floating-animation {
+  animation: float-cards var(--animation-duration, 8s) ease-in-out infinite;
 }
 
 /* Removed CSS marquee animation since we're using JavaScript-based procedural scroll */
