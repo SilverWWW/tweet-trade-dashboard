@@ -69,27 +69,14 @@ export function PostCard({
     if (cardWidth === 0) return
 
     const leftPadding = 16 // pl-4 = 16px
-    const maxOffset = Math.max(0, totalWidth - containerWidth + leftPadding + 32)
+    const rightPadding = 16
+    const maxOffset = Math.max(0, totalWidth - containerWidth + leftPadding + rightPadding)
+    const duration = Math.max(4, maxOffset / 33) // minimum 4 seconds
 
-    if (containerRef.current && maxOffset > 0) {
-      const baseSpeed = 33 // pixels per second
-      const duration = Math.max(4, maxOffset / baseSpeed) // minimum 4 seconds
-
-      // Set CSS custom properties for the animation
-      containerRef.current.style.setProperty("--max-offset", `${maxOffset}px`)
-      containerRef.current.style.setProperty("--animation-duration", `${duration}s`)
-      containerRef.current.classList.add("floating-animation")
-    } else {
-      if (containerRef.current) {
-        containerRef.current.classList.remove("floating-animation")
-      }
-    }
-
-    return () => {
-      if (containerRef.current) {
-        containerRef.current.classList.remove("floating-animation")
-      }
-    }
+    // Set CSS custom properties for the animation
+    containerRef.current.style.setProperty("--max-offset", `${maxOffset}px`)
+    containerRef.current.style.setProperty("--animation-duration", `${duration}s`)
+    containerRef.current.classList.add("floating-animation")
   }, [totalTrades, isManualControl])
 
   const handlePrevTrade = () => {
@@ -104,13 +91,18 @@ export function PostCard({
     setCurrentTradeIndex(newIndex)
 
     if (containerRef.current) {
-      const { cardWidth, containerWidth } = getDimensions()
+      const { cardWidth, containerWidth, totalWidth } = getDimensions()
 
       if (cardWidth === 0) return
 
       const cardPosition = newIndex * cardWidth
-      const centeredOffset = cardPosition - (containerWidth - cardWidth) / 2
-      const clampedOffset = Math.max(0, centeredOffset)
+      const isMobile = window.innerWidth < 1024
+      const mobileOffset = isMobile ? 16 : 0 // Extra offset for mobile centering
+      const centeredOffset = cardPosition - (containerWidth - cardWidth) / 2 + mobileOffset
+      const leftPadding = 16
+      const rightPadding = 16
+      const maxOffset = Math.max(0, totalWidth - containerWidth + leftPadding + rightPadding)
+      const clampedOffset = Math.max(0, Math.min(centeredOffset, maxOffset))
 
       setCurrentOffset(clampedOffset)
       containerRef.current.style.transform = `translateX(-${clampedOffset}px)`
@@ -141,9 +133,12 @@ export function PostCard({
       if (cardWidth === 0) return
 
       const cardPosition = newIndex * cardWidth
-      const centeredOffset = cardPosition - (containerWidth - cardWidth) / 2
+      const isMobile = window.innerWidth < 1024
+      const mobileOffset = isMobile ? 16 : 0 // Extra offset for mobile centering
+      const centeredOffset = cardPosition - (containerWidth - cardWidth) / 2 + mobileOffset
       const leftPadding = 16
-      const maxOffset = Math.max(0, totalWidth - containerWidth + leftPadding + 32)
+      const rightPadding = 32
+      const maxOffset = Math.max(0, totalWidth - containerWidth + leftPadding + rightPadding)
       const clampedOffset = Math.max(0, Math.min(centeredOffset, maxOffset))
 
       setCurrentOffset(clampedOffset)
@@ -179,7 +174,7 @@ export function PostCard({
     return (
       <div
         data-trade-card
-        className="flex-shrink-0 w-full md:w-[728px] bg-white rounded-lg p-4 border border-gray-200 shadow-sm mx-2"
+        className="flex-shrink-0 w-[calc(100%-80px)] lg:w-[728px] bg-white rounded-lg p-4 border border-gray-200 shadow-sm mx-2"
       >
         <div className="space-y-3">
           <div className="flex items-center justify-between">
