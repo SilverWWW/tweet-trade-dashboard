@@ -7,25 +7,13 @@ import { LoadingSpinner } from "@/components/loading-spinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertCircle, TrendingUp, MessageSquare } from "lucide-react"
-import { useRealTimeData } from "@/hooks/use-real-time-data"
+import { useSimpleData } from "@/hooks/use-simple-data"
 
 export default function Dashboard() {
-  const {
-    tweets: posts,
-    queuedTrades,
-    executedTrades,
-    loading,
-    error,
-    isRefreshing,
-    lastUpdated,
-    refresh,
-    hasMore,
-    loadingMore,
-    loadMore,
-    totalTweets: totalPosts,
-  } = useRealTimeData({
-    limit: 20,
-  })
+  const { tweets: posts, loading, error, refresh } = useSimpleData()
+
+  const queuedTrades = posts.flatMap((post) => post.trades.filter((trade) => !trade.executed_at))
+  const executedTrades = posts.flatMap((post) => post.trades.filter((trade) => trade.executed_at))
 
   if (loading) {
     return (
@@ -43,7 +31,7 @@ export default function Dashboard() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <DashboardHeader onRefresh={refresh} isRefreshing={isRefreshing} />
+        <DashboardHeader onRefresh={refresh} isRefreshing={false} />
         <div className="container mx-auto px-4 py-8">
           <Alert variant="destructive" className="max-w-2xl mx-auto">
             <AlertCircle className="h-4 w-4" />
@@ -58,8 +46,8 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <DashboardHeader
         onRefresh={refresh}
-        isRefreshing={isRefreshing}
-        totalTweets={totalPosts}
+        isRefreshing={false}
+        totalTweets={posts.length}
         totalTrades={queuedTrades.length + executedTrades.length}
       />
 
@@ -70,7 +58,7 @@ export default function Dashboard() {
         </div>
 
         {/* Consolidated Dashboard Stats */}
-        <DashboardStats totalTweets={totalPosts} queuedTrades={queuedTrades} executedTrades={executedTrades} />
+        <DashboardStats totalTweets={posts.length} queuedTrades={queuedTrades} executedTrades={executedTrades} />
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="posts" className="w-full">
@@ -91,11 +79,11 @@ export default function Dashboard() {
               posts={posts}
               queuedTrades={queuedTrades}
               executedTrades={executedTrades}
-              isRefreshing={isRefreshing}
-              hasMore={hasMore}
-              loadingMore={loadingMore}
-              onLoadMore={loadMore}
-              totalPosts={totalPosts}
+              isRefreshing={false}
+              hasMore={false}
+              loadingMore={false}
+              onLoadMore={() => {}}
+              totalPosts={posts.length}
             />
           </TabsContent>
 
@@ -126,7 +114,7 @@ export default function Dashboard() {
                             </span>
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            ${Math.abs(trade.dollar_amount).toLocaleString()} • {trade.days_to_hold} days
+                            ${Math.abs(Number(trade.dollar_amount)).toLocaleString()} • {trade.timeline} days
                           </div>
                         </div>
                       ))}
@@ -150,7 +138,7 @@ export default function Dashboard() {
                             </span>
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            ${Math.abs(trade.dollar_amount).toLocaleString()} • {trade.days_to_hold} days
+                            ${Math.abs(Number(trade.dollar_amount)).toLocaleString()} • {trade.timeline} days
                           </div>
                         </div>
                       ))}
