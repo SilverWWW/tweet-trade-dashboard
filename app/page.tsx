@@ -2,20 +2,21 @@
 
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardStats } from "@/components/dashboard-stats"
-import { PostList } from "@/components/post-list"
+import { PostCard } from "@/components/post-card"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertCircle, TrendingUp, MessageSquare } from "lucide-react"
+import { AlertCircle, TrendingUp, MessageSquare, RefreshCw, ChevronDown } from "lucide-react"
 import { useData } from "@/hooks/use-data"
 
 export default function Dashboard() {
-  const { data: posts, loading, error } = useData()
+  const { data: posts, loading, error, hasMore, totalTweets, currentPage, loadMore, refresh } = useData()
 
-  const queuedTrades = posts.flatMap((post) => post.trades.filter((trade) => !trade.executed_at))
-  const executedTrades = posts.flatMap((post) => post.trades.filter((trade) => trade.executed_at))
+  const queuedTrades = posts.flatMap((post) => post.trades.filter((trade) => trade.action !== "executed"))
+  const executedTrades = posts.flatMap((post) => post.trades.filter((trade) => trade.action === "executed"))
 
-  if (loading) {
+  if (loading && posts.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <DashboardHeader />
@@ -28,7 +29,7 @@ export default function Dashboard() {
     )
   }
 
-  if (error) {
+  if (error && posts.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <DashboardHeader />
@@ -44,16 +45,31 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader totalTweets={posts.length} totalTrades={queuedTrades.length + executedTrades.length} />
+      <DashboardHeader totalTweets={totalTweets} totalTrades={queuedTrades.length + executedTrades.length} />
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Real-time Status Indicator */}
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-card-foreground font-playfair">Trading Dashboard</h1>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refresh}
+            disabled={loading}
+            className="flex items-center gap-2 bg-transparent"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
         </div>
 
-        {/* Consolidated Dashboard Stats */}
-        <DashboardStats totalTweets={posts.length} queuedTrades={queuedTrades} executedTrades={executedTrades} />
+        <DashboardStats
+          totalTweets={totalTweets}
+          queuedTrades={queuedTrades}
+          executedTrades={executedTrades}
+          currentPage={currentPage}
+          postsLoaded={posts.length}
+        />
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="posts" className="w-full">
@@ -69,17 +85,46 @@ export default function Dashboard() {
           </TabsList>
 
           <TabsContent value="posts" className="mt-6">
-            <PostList
-              limit={20}
-              posts={posts}
-              queuedTrades={queuedTrades}
-              executedTrades={executedTrades}
-              isRefreshing={false}
-              hasMore={false}
-              loadingMore={false}
-              onLoadMore={() => {}}
-              totalPosts={posts.length}
-            />
+            <div className="space-y-6">
+              <div className="space-y-4">
+                {posts.map((post) => (
+                  <PostCard key={post.tweet_process_id} post={post} />
+                ))}
+              </div>
+
+              {hasMore && (
+                <div className="flex justify-center pt-6">
+                  <Button
+                    variant="outline"
+                    onClick={loadMore}
+                    disabled={loading}
+                    className="flex items-center gap-2 bg-transparent"
+                  >
+                    {loading ? (
+                      <>
+                        <LoadingSpinner size="sm" />
+                        Loading more...
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4" />
+                        Load More Posts
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              {!hasMore && posts.length > 0 && (
+                <div className="text-center py-6 text-muted-foreground">You've reached the end of the feed</div>
+              )}
+
+              {posts.length === 0 && !loading && (
+                <div className="text-center py-12 text-muted-foreground">
+                  No market-impact posts found. Check back later for trading activity.
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="trades" className="mt-6">
@@ -100,16 +145,17 @@ export default function Dashboard() {
                       Queued Trades ({queuedTrades.length})
                     </h3>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {queuedTrades.map((trade) => (
-                        <div key={trade.id} className="border border-border rounded-lg p-4 bg-card">
+                      {queuedTrades.map((trade, index) => (
+                        <div
+                          key={`${trade.tweet_process_id}-${index}`}
+                          className="border border-border rounded-lg p-4 bg-card"
+                        >
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-mono font-bold text-lg">${trade.ticker}</span>
-                            <span className="text-sm text-muted-foreground">
-                              {trade.dollar_amount > 0 ? "BUY" : "SELL"}
-                            </span>
+                            <span className="font-mono font-bold text-lg">${trade.symbol}</span>
+                            <span className="text-sm text-muted-foreground">{trade.action.toUpperCase()}</span>
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            ${Math.abs(Number(trade.dollar_amount)).toLocaleString()} • {trade.timeline} days
+                            ${Math.abs(trade.price * trade.quantity).toLocaleString()} • {trade.quantity} shares
                           </div>
                         </div>
                       ))}
@@ -124,16 +170,17 @@ export default function Dashboard() {
                       Executed Trades ({executedTrades.length})
                     </h3>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {executedTrades.map((trade) => (
-                        <div key={trade.id} className="border border-border rounded-lg p-4 bg-card">
+                      {executedTrades.map((trade, index) => (
+                        <div
+                          key={`${trade.tweet_process_id}-${index}`}
+                          className="border border-border rounded-lg p-4 bg-card"
+                        >
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-mono font-bold text-lg">${trade.ticker}</span>
-                            <span className="text-sm text-muted-foreground">
-                              {trade.dollar_amount > 0 ? "BUY" : "SELL"}
-                            </span>
+                            <span className="font-mono font-bold text-lg">${trade.symbol}</span>
+                            <span className="text-sm text-muted-foreground">{trade.action.toUpperCase()}</span>
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            ${Math.abs(Number(trade.dollar_amount)).toLocaleString()} • {trade.timeline} days
+                            ${Math.abs(trade.price * trade.quantity).toLocaleString()} • {trade.quantity} shares
                           </div>
                         </div>
                       ))}
