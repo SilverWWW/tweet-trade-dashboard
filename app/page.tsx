@@ -7,10 +7,10 @@ import { LoadingSpinner } from "@/components/loading-spinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertCircle, TrendingUp, MessageSquare } from "lucide-react"
-import { useSimpleData } from "@/hooks/use-simple-data"
+import { useData } from "@/hooks/use-data"
 
 export default function Dashboard() {
-  const { tweets: posts, loading, error, refresh } = useSimpleData()
+  const { data: posts, loading, error } = useData()
 
   const queuedTrades = posts.flatMap((post) => post.trades.filter((trade) => !trade.executed_at))
   const executedTrades = posts.flatMap((post) => post.trades.filter((trade) => trade.executed_at))
@@ -31,7 +31,7 @@ export default function Dashboard() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <DashboardHeader onRefresh={refresh} isRefreshing={false} />
+        <DashboardHeader />
         <div className="container mx-auto px-4 py-8">
           <Alert variant="destructive" className="max-w-2xl mx-auto">
             <AlertCircle className="h-4 w-4" />
@@ -44,12 +44,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader
-        onRefresh={refresh}
-        isRefreshing={false}
-        totalTweets={posts.length}
-        totalTrades={queuedTrades.length + executedTrades.length}
-      />
+      <DashboardHeader totalTweets={posts.length} totalTrades={queuedTrades.length + executedTrades.length} />
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Real-time Status Indicator */}
