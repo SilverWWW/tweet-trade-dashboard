@@ -9,6 +9,9 @@ const fetchWithAuth = async (endpoint: string): Promise<Response> => {
     throw new Error("Authentication configuration missing. Please set ADMIN_API_KEY in Project Settings.")
   }
 
+  console.log("[v0] API_BASE_URL:", API_BASE_URL)
+  console.log("[v0] Fetching endpoint:", `${API_BASE_URL}${endpoint}`)
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "GET",
     headers: {
@@ -16,6 +19,8 @@ const fetchWithAuth = async (endpoint: string): Promise<Response> => {
       Accept: "application/json",
       Authorization: `Bearer ${process.env.ADMIN_API_KEY}`,
     },
+    cache: "no-store",
+    next: { revalidate: 0 },
   })
 
   console.log("[v0] Response status:", response.status)

@@ -59,8 +59,8 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
         const currentOffset = loadMore ? offsetRef.current : 0
         const [tweetsResponse, queuedResponse, executedResponse] = await Promise.all([
           fetchTweetsWithMarketEffect(limit, currentOffset),
-          loadMore ? Promise.resolve({ success: true, data: data.queuedTrades }) : fetchAllQueuedTrades(),
-          loadMore ? Promise.resolve({ success: true, data: data.executedTrades }) : fetchAllExecutedTrades(),
+          fetchAllQueuedTrades(),
+          fetchAllExecutedTrades(),
         ])
 
         if (!mountedRef.current) return
@@ -70,8 +70,8 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
           loading: false,
           error: null,
           tweets: [],
-          queuedTrades: loadMore ? data.queuedTrades : [],
-          executedTrades: loadMore ? data.executedTrades : [],
+          queuedTrades: [],
+          executedTrades: [],
           hasMore: false,
           loadingMore: false,
           totalTweets: 0,
@@ -91,11 +91,11 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
           }
         }
 
-        if (!loadMore && queuedResponse.success) {
+        if (queuedResponse.success) {
           newData.queuedTrades = queuedResponse.trades || queuedResponse.data || []
         }
 
-        if (!loadMore && executedResponse.success) {
+        if (executedResponse.success) {
           newData.executedTrades = executedResponse.trades || executedResponse.data || []
         }
 
@@ -118,7 +118,7 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
         }
       }
     },
-    [limit, data.tweets, data.queuedTrades, data.executedTrades],
+    [limit, data.tweets],
   )
 
   const manualRefresh = useCallback(() => {
