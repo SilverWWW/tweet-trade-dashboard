@@ -36,6 +36,7 @@ const globalCache = {
   authors: new Map<string, Author>(),
   isLoading: false,
   hasLoaded: false,
+  authorRequests: new Map<string, Promise<Author | null>>(),
 }
 
 export function useData() {
@@ -109,30 +110,43 @@ export function useData() {
 
         // Fetch authors (only unique ones not already cached)
         const uniqueAuthorIds = [...new Set(tweets.map((tweet) => tweet.author_id).filter(Boolean))]
-        const uncachedAuthorIds = uniqueAuthorIds.filter((id) => !globalCache.authors.has(id))
+        const uncachedAuthorIds = uniqueAuthorIds.filter(
+          (id) => !globalCache.authors.has(id) && !globalCache.authorRequests.has(id),
+        )
 
         console.log("[v0] Need to fetch", uncachedAuthorIds.length, "new authors")
 
-        const batchSize = 5
-        for (let i = 0; i < uncachedAuthorIds.length; i += batchSize) {
-          const batch = uncachedAuthorIds.slice(i, i + batchSize)
-          await Promise.all(
-            batch.map(async (authorId) => {
-              try {
-                const authorResponse = await fetch(`/api/authors/${authorId}`)
-                if (authorResponse.ok) {
-                  const authorData = await authorResponse.json()
-                  const author = authorData.author_id ? authorData : authorData.data || authorData
-                  if (author && author.author_id) {
-                    globalCache.authors.set(authorId, author)
-                  }
+        const authorPromises = uncachedAuthorIds.map(async (authorId) => {
+          if (globalCache.authorRequests.has(authorId)) {
+            return globalCache.authorRequests.get(authorId)!
+          }
+
+          const authorPromise = (async () => {
+            try {
+              console.log("[v0] Making API call to:", `/api/authors/${authorId}`)
+              const authorResponse = await fetch(`/api/authors/${authorId}`)
+              if (authorResponse.ok) {
+                const authorData = await authorResponse.json()
+                const author = authorData.author_id ? authorData : authorData.data || authorData
+                if (author && author.author_id) {
+                  globalCache.authors.set(authorId, author)
+                  return author
                 }
-              } catch (err) {
-                console.warn("[v0] Error fetching author:", authorId)
               }
-            }),
-          )
-        }
+              return null
+            } catch (err) {
+              console.warn("[v0] Error fetching author:", authorId)
+              return null
+            } finally {
+              globalCache.authorRequests.delete(authorId)
+            }
+          })()
+
+          globalCache.authorRequests.set(authorId, authorPromise)
+          return authorPromise
+        })
+
+        await Promise.all(authorPromises)
 
         console.log("[v0] Total authors cached:", globalCache.authors.size)
 
@@ -159,9 +173,36 @@ export function useData() {
 function processData(tweets: Tweet[], trades: Trade[], authorMap: Map<string, Author>): TweetWithData[] {
   console.log("[v0] Processing data - tweets:", tweets.length, "trades:", trades.length, "authors:", authorMap.size)
 
-  const tweetsWithData: TweetWithData[] = tweets.map((tweet) => {
+  const tweetsWithData: TweetWithData[] = tweets.map((tweet, index) => {
     const tweetTrades = trades.filter((trade) => trade.tweet_process_id === tweet.tweet_process_id)
     const author = authorMap.get(tweet.author_id) || null
+
+    // Log detailed info for first 5 tweets and any without trades
+    if (index < 5 || tweetTrades.length === 0) {
+      console.log(`[v0] Tweet ${index + 1}:`, {
+        tweet_process_id: tweet.tweet_process_id,
+        author_id: tweet.author_id,
+        trades_found: tweetTrades.length,
+        author_found: !!author,
+        tweet_content_preview: tweet.tweet_content.substring(0, 50) + "...",
+      })
+
+      if (tweetTrades.length === 0) {
+        console.warn(`[v0] NO TRADES for tweet ${tweet.tweet_process_id}`)
+        // Check if any trades exist with similar IDs
+        const similarTrades = trades.filter(
+          (trade) =>
+            trade.tweet_process_id.includes(tweet.tweet_process_id.substring(0, 8)) ||
+            tweet.tweet_process_id.includes(trade.tweet_process_id.substring(0, 8)),
+        )
+        if (similarTrades.length > 0) {
+          console.warn(
+            `[v0] Found ${similarTrades.length} trades with similar IDs:`,
+            similarTrades.map((t) => t.tweet_process_id),
+          )
+        }
+      }
+    }
 
     return {
       ...tweet,
@@ -171,7 +212,19 @@ function processData(tweets: Tweet[], trades: Trade[], authorMap: Map<string, Au
   })
 
   const tweetsWithTrades = tweetsWithData.filter((t) => t.trades.length > 0)
+  const tweetsWithoutTrades = tweetsWithData.filter((t) => t.trades.length === 0)
+
   console.log("[v0] Final result:", tweetsWithData.length, "tweets,", tweetsWithTrades.length, "have trades")
+
+  if (tweetsWithoutTrades.length > 0) {
+    console.warn(`[v0] ${tweetsWithoutTrades.length} tweets have NO TRADES:`)
+    tweetsWithoutTrades.slice(0, 3).forEach((tweet, i) => {
+      console.warn(`[v0] No trades #${i + 1}:`, {
+        id: tweet.tweet_process_id,
+        content: tweet.tweet_content.substring(0, 30) + "...",
+      })
+    })
+  }
 
   return tweetsWithData
 }
