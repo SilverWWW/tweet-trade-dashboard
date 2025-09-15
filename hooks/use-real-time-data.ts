@@ -46,6 +46,10 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
   const fetchData = useCallback(
     async (loadMore = false) => {
       try {
+        console.log("[v0] Starting data fetch, loadMore:", loadMore)
+        console.log("[v0] Current environment:", process.env.NODE_ENV)
+        console.log("[v0] Current offset:", loadMore ? offsetRef.current : 0)
+
         if (loadMore) {
           setData((prev) => ({ ...prev, loadingMore: true }))
         } else {
@@ -57,11 +61,18 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
         }
 
         const currentOffset = loadMore ? offsetRef.current : 0
+
+        console.log("[v0] Making API calls...")
         const [tweetsResponse, queuedResponse, executedResponse] = await Promise.all([
           fetchTweetsWithMarketEffect(limit, currentOffset),
           fetchAllQueuedTrades(),
           fetchAllExecutedTrades(),
         ])
+
+        console.log("[v0] API responses received:")
+        console.log("[v0] Tweets response:", tweetsResponse)
+        console.log("[v0] Queued trades response:", queuedResponse)
+        console.log("[v0] Executed trades response:", executedResponse)
 
         if (!mountedRef.current) return
 
@@ -79,6 +90,7 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
 
         if (tweetsResponse.success) {
           const newTweets = tweetsResponse.data || tweetsResponse.trades || []
+          console.log("[v0] Processing tweets:", newTweets.length, "tweets")
           newData.tweets = loadMore ? [...data.tweets, ...newTweets] : newTweets
           if (tweetsResponse.pagination) {
             newData.hasMore = tweetsResponse.pagination.hasMore
@@ -89,26 +101,35 @@ export function useRealTimeData({ limit = 20 }: UseRealTimeDataOptions = {}) {
               offsetRef.current = tweetsResponse.pagination.limit
             }
           }
+        } else {
+          console.log("[v0] Tweets fetch failed:", tweetsResponse.error)
         }
 
         if (queuedResponse.success) {
           newData.queuedTrades = queuedResponse.trades || queuedResponse.data || []
+          console.log("[v0] Processing queued trades:", newData.queuedTrades.length, "trades")
+        } else {
+          console.log("[v0] Queued trades fetch failed:", queuedResponse.error)
         }
 
         if (executedResponse.success) {
           newData.executedTrades = executedResponse.trades || executedResponse.data || []
+          console.log("[v0] Processing executed trades:", newData.executedTrades.length, "trades")
+        } else {
+          console.log("[v0] Executed trades fetch failed:", executedResponse.error)
         }
 
+        console.log("[v0] Final data state:", newData)
         setData(newData)
       } catch (err) {
         if (!mountedRef.current) return
 
-        console.error("Error fetching real-time data:", err)
+        console.error("[v0] Error fetching real-time data:", err)
 
         setData((prev) => ({
           ...prev,
           loading: false,
-          error: "Failed to fetch data from API",
+          error: `Failed to fetch data from API: ${err instanceof Error ? err.message : "Unknown error"}`,
           loadingMore: false,
         }))
       } finally {

@@ -1,4 +1,4 @@
-const API_BASE_URL = "/api"
+const API_BASE_URL = typeof window !== "undefined" ? `${window.location.origin}/api` : "/api"
 
 export interface TweetProcess {
   tweet_process_id: string
@@ -58,6 +58,8 @@ export interface ApiResponse<T> {
 }
 
 const fetchWithErrorHandling = async (url: string): Promise<Response> => {
+  console.log("[v0] Making API call to:", url)
+
   const response = await fetch(url, {
     method: "GET",
     headers: {
@@ -65,10 +67,14 @@ const fetchWithErrorHandling = async (url: string): Promise<Response> => {
       Accept: "application/json",
     },
     mode: "cors",
+    cache: "no-store",
   })
+
+  console.log("[v0] API response status:", response.status)
 
   if (!response.ok) {
     const errorText = await response.text()
+    console.log("[v0] API error response:", errorText)
 
     if (response.status === 401) {
       throw new Error("Authentication failed. Please check your ADMIN_API_KEY in Project Settings.")
